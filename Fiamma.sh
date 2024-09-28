@@ -15,11 +15,11 @@ function main_menu() {
         echo "退出脚本，请按键盘ctrl c退出即可"
         echo "请选择要执行的操作:"
         echo "1) 安装和配置 Fiamma 节点"
-        echo "2) Crate 验证器"
+        echo "2) 创建验证器"
         echo "3) 委托"
         echo "4) 退出"
         echo "================================================================"
-         read -p "请输入选项 (1, 2, 3, 4): " choice
+        read -p "请输入选项 (1, 2, 3, 4): " choice
 
         case $choice in
             1)
@@ -109,53 +109,14 @@ function install_and_configure_fiamma() {
     echo "Fiamma 已成功安装并切换到 v0.2.0 版本。"
 
     # 初始化 Fiamma
-    validname="Validname"  # 更改为您的验证人名称
-    fiamma init $validname --chain-id fiamma-testnet-1
+    echo "请输入验证人名称："
+    read -r validname
+    fiamma init "$validname" --chain-id fiamma-testnet-1
 
     # 配置 client.toml
     sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" $HOME/.fiamma/config/client.toml
     sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" $HOME/.fiamma/config/client.toml
     sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" $HOME/.fiamma/config/client.toml
-
-    # 下载 genesis.json 和 addrbook.json
-    wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
-    wget -O $HOME/.fiamma/config/addrbook.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/addrbook.json
-
-    # 配置 app.toml
-    sed -i -e "s/^pruning *=.*/pruning = \"custom\"/" $HOME/.fiamma/config/app.toml
-    sed -i -e "s/^pruning-keep-recent *=.*/pruning-keep-recent = \"100\"/" $HOME/.fiamma/config/app.toml
-    sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"50\"/" $HOME/.fiamma/config/app.toml
-    sed -i 's|minimum-gas-prices =.*|minimum-gas-prices = "0.0001ufia"|g' $HOME/.fiamma/config/app.toml
-
-    # 配置 config.toml
-    SEEDS=""
-    PEERS="16b7389e724cc440b2f8a2a0f6b4c495851934ff@fiamma-testnet-peer.itrocket.net:49656,74ec322e114b6757ac066a7b6b55cd224cdb8885@65.21.167.216:37656,37e2b149db5558436bd507ecca2f62fe605f92fe@88.198.27.51:60556,e30701492127fdd86ccf243a55b9dc4146772235@213.199.42.85:37656,e2b57b310a6f3c4c0f85fc3dc3447d7e9696cd65@95.165.89.222:26706,421beadda6355465be81703fd8d25c30b2233df0@5.78.71.69:26656,21a5cae23e835f99735798024eef39fa0875bc62@65.109.30.110:17456,dd09c5a54d233d7b1b238eecedf7d855b4cb549c@65.108.81.145:26656,043da1f559e0f83eff52ff65f76b012f0f0ee9b3@198.7.119.198:37656,5a6bdb09c087012e9aa9bbdaa95694a82d489a94@144.76.155.11:26856,a03a1a53fafb669bfcce53b8b2a1362aa153cf99@77.90.13.137:37656"
-    sed -i -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*seeds *=.*/seeds = \"$SEEDS\"/}" \
-           -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*persistent_peers *=.*/persistent_peers = \"$PEERS\"/}" $HOME/.fiamma/config/config.toml
-
-    # 创建钱包或导入钱包
-    echo "是否要创建新钱包？（Y/N）"
-    read -r create_wallet
-    if [[ "$create_wallet" == "Y" || "$create_wallet" == "y" ]]; then
-        echo "请输入钱包名称："
-        read -r wallet_name
-        fiammad keys add "$wallet_name"
-    elif [[ "$create_wallet" == "N" || "$create_wallet" == "n" ]]; then
-        echo "是否要导入现有钱包？（Y/N）"
-        read -r import_wallet
-        if [[ "$import_wallet" == "Y" || "$import_wallet" == "y" ]]; then
-            echo "请输入钱包名称："
-            read -r wallet_name
-            echo "请输入助记词："
-            read -r mnemonic
-            echo "$mnemonic" | fiammad keys add "$wallet_name" --recover
-        else
-            echo "未创建或导入钱包，继续配置..."
-        fi
-    else
-        echo "无效的输入。"
-        exit 1
-    fi
 
     # 创建 systemd 服务文件
     sudo tee /etc/systemd/system/fiammad.service > /dev/null <<EOF
@@ -192,15 +153,47 @@ function create_and_update_validator() {
     if fiammad tendermint show-validator; then
         echo "验证器信息已显示。可以继续创建验证器。"
 
+        # 创建钱包或导入钱包
+        echo "是否要创建新钱包？（Y/N）"
+        read -r create_wallet
+        if [[ "$create_wallet" == "Y" || "$create_wallet" == "y" ]]; then
+            echo "请输入钱包名称："
+            read -r wallet_name
+            fiammad keys add "$wallet_name"
+        elif [[ "$create_wallet" == "N" || "$create_wallet" == "n" ]]; then
+            echo "是否要导入现有钱包？（Y/N）"
+            read -r import_wallet
+            if [[ "$import_wallet" == "Y" || "$import_wallet" == "y" ]]; then
+                echo "请输入钱包名称："
+                read -r wallet_name
+                echo "请输入助记词："
+                read -r mnemonic
+                echo "$mnemonic" | fiammad keys add "$wallet_name" --recover
+            else
+                echo "未创建或导入钱包，继续配置..."
+            fi
+        else
+            echo "无效的输入。"
+            exit 1
+        fi
+
+        # 获取用户输入的信息
+        echo "请输入公钥："
+        read -r pubkey
+        echo "请输入验证人名称（Moniker）："
+        read -r moniker
+        echo "请输入网站（可选）："
+        read -r website
+
         # 更新验证器信息
         echo "正在更新验证器信息..."
         cat << EOF > ~/.fiamma/config/validator.json
 {
-    "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"1PuL3HJCGX2lh53aMuaOaZEaQjrJy2EAWMoWcYqKETg="},
+    "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"$pubkey"},
     "amount": "20000ufia",
-    "moniker": "Moniker",
+    "moniker": "$moniker",
     "identity": "",
-    "website": "",
+    "website": "$website",
     "security": "",
     "details": "RPCdot.com 🐦",
     "commission-rate": "0.1",
