@@ -19,7 +19,7 @@ function main_menu() {
         echo "3) 委托"
         echo "4) 退出"
         echo "================================================================"
-        read -r choice
+         read -p "请输入选项 (1, 2, 3, 4): " choice
 
         case $choice in
             1)
