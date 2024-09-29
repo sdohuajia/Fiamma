@@ -109,7 +109,7 @@ function install_and_configure_fiamma() {
     cd fiamma
 
     # 切换到指定版本并安装
-    git checkout v0.2.0
+    git checkout v0.1.3
     make install
 
     echo "Fiamma 已成功安装并切换到 v0.2.0 版本。"
