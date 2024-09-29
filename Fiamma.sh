@@ -189,6 +189,29 @@ function create_and_update_validator() {
             exit 1
         fi
 
+# 获取用户输入的 moniker 和 pubkey
+    echo "请输入 moniker："
+    read -r moniker
+    echo "请输入 pubkey："
+    read -r pubkey
+
+    # 写入 validator.json
+    cat << EOF > ~/.fiamma/config/validator.json
+{
+    "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"$pubkey"},
+    "amount": "20000ufia",
+    "moniker": "$moniker",
+    "identity": "",
+    "website": "",
+    "security": "",
+    "details": "RPCdot.com 🐦",
+    "commission-rate": "0.1",
+    "commission-max-rate": "0.2",
+    "commission-max-change-rate": "0.01",
+    "min-self-delegation": "1"
+}
+EOF
+
         # 重启服务以应用更改
         sudo systemctl restart fiammad
         echo "验证器信息已更新，Fiamma 服务已重启。"
