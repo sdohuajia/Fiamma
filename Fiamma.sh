@@ -129,17 +129,23 @@ function install_and_configure_fiamma() {
        -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*persistent_peers *=.*/persistent_peers = \"$PEERS\"/}" $HOME/.fiamma/config/config.toml
 
     # 创建 systemd 服务文件
-    sudo tee /etc/systemd/system/fiammad.service > /dev/null <<EOF
+    sudo tee /etc/systemd/system/fiamma.service > /dev/null <<EOF
 [Unit]
-Description=Fiamma node
+Description=Fiamma daemon
 After=network-online.target
+
 [Service]
 User=$USER
-WorkingDirectory=$HOME/.fiamma
-ExecStart=$(which fiammad) start --home $HOME/.fiamma
-Restart=on-failure
-RestartSec=5
-LimitNOFILE=65535
+ExecStart=$(which cosmovisor) run start --x-crisis-skip-assert-invariants
+Restart=always
+RestartSec=3
+LimitNOFILE=infinity
+
+Environment="DAEMON_NAME=fiammad"
+Environment="DAEMON_HOME=${HOME}/.fiamma"
+Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
+Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
+
 [Install]
 WantedBy=multi-user.target
 EOF
