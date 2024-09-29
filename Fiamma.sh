@@ -112,16 +112,26 @@ function install_and_configure_fiamma() {
 
     echo "Fiamma 已成功安装并切换到 v0.2.0 版本。"
 
-    # 初始化 Fiamma
-    echo "请输入验证人名称："
-    read -r validname
-    fiamma init "$validname" --chain-id fiamma-testnet-1
+    # 提示用户输入验证人名称
+echo "请输入验证人名称："
+read -r validname
 
+# 创建必要的目录
+mkdir -p "$HOME/.fiamma/config"
+
+# 初始化 Fiamma
+fiamma init "$validname" --chain-id fiamma-testnet-1
+
+# 检查是否成功创建了配置文件
+if [ -f "$HOME/.fiamma/config/client.toml" ]; then
     # 配置 client.toml
     CONFIG_FILE="$HOME/.fiamma/config/client.toml"
     sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
     sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
     sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
+else
+    echo "初始化失败，未找到配置文件。"
+fi
 
     # 下载 genesis.json 和 addrbook.json
     wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
@@ -161,6 +171,9 @@ EOF
     sudo systemctl restart fiammad
 
     echo "Fiamma 服务已成功创建、启用并启动。运行命令4可查看服务日志："
+
+    # 等待用户按任意键以返回主菜单
+    read -p "按任意键返回主菜单..."
 }
 
 # 创建和更新验证器函数
