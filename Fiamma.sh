@@ -17,9 +17,10 @@ function main_menu() {
         echo "1) 安装和配置 Fiamma 节点"
         echo "2) 创建验证器"
         echo "3) 委托"
-        echo "4) 退出"
+        echo "4) 查看日志"
+        echo "5) 退出"
         echo "================================================================"
-        read -p "请输入选项 (1, 2, 3, 4): " choice
+        read -p "请输入选项 (1, 2, 3, 4, 5): " choice
 
         case $choice in
             1)
@@ -32,6 +33,9 @@ function main_menu() {
                 delegate
                 ;;
             4)
+                journalctl -u fiammad -f -o cat
+                ;;
+            5)
                 echo "退出脚本。"
                 exit 0
                 ;;
