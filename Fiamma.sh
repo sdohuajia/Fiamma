@@ -118,9 +118,10 @@ function install_and_configure_fiamma() {
     fiamma init "$validname" --chain-id fiamma-testnet-1
 
     # 配置 client.toml
-    sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" $HOME/.fiamma/config/client.toml
-    sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" $HOME/.fiamma/config/client.toml
-    sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" $HOME/.fiamma/config/client.toml
+    CONFIG_FILE="$HOME/.fiamma/config/client.toml"
+    sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
+    sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
+    sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
 
     # 下载 genesis.json 和 addrbook.json
     wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
