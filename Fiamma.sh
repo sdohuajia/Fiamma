@@ -128,10 +128,6 @@ function install_and_configure_fiamma() {
     sed -i -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*seeds *=.*/seeds = \"$SEEDS\"/}" \
        -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*persistent_peers *=.*/persistent_peers = \"$PEERS\"/}" $HOME/.fiamma/config/config.toml
 
-    # 设置 minimum-gas-prices
-    sed -i -e '/^minimum-gas-prices *=/d' $HOME/.fiamma/config/app.toml
-    echo 'minimum-gas-prices = "0.00001ufia"' >> $HOME/.fiamma/config/app.toml
-
     # 创建 systemd 服务文件
     sudo tee /etc/systemd/system/fiamma.service > /dev/null <<EOF
 [Unit]
