@@ -125,15 +125,33 @@ function install_and_configure_fiamma() {
     fiamma init "$validname" --chain-id fiamma-testnet-1
 
     # 检查是否成功创建了配置文件
-    if [ -f "$HOME/.fiamma/config/client.toml" ]; then
-        # 配置 client.toml
-        CONFIG_FILE="$HOME/.fiamma/config/client.toml"
-        sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
-        sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
-        sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
-    else
-        echo "初始化失败，未找到配置文件。"
-    fi
+if [ -f "$HOME/.fiamma/config/client.toml" ]; then
+    # 配置 client.toml
+    CONFIG_FILE="$HOME/.fiamma/config/client.toml"
+    sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
+    sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
+    sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
+else
+    echo "client.toml 文件未找到，跳过配置。"
+fi
+
+if [ -f "$HOME/.fiamma/config/app.toml" ]; then
+    # 配置 app.toml
+    sed -i -e "s/^pruning *=.*/pruning = \"custom\"/" "$HOME/.fiamma/config/app.toml"
+    sed -i -e "s/^pruning-keep-recent *=.*/pruning-keep-recent = \"100\"/" "$HOME/.fiamma/config/app.toml"
+    sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"50\"/" "$HOME/.fiamma/config/app.toml"
+    sed -i 's|minimum-gas-prices =.*|minimum-gas-prices = "0.0001ufia"|g' "$HOME/.fiamma/config/app.toml"
+else
+    echo "app.toml 文件未找到，跳过配置。"
+fi
+
+if [ -f "$HOME/.fiamma/config/config.toml" ]; then
+    # 配置 peers 和 seeds
+    sed -i -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*seeds *=.*/seeds = \"$SEEDS\"/}" \
+       -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*persistent_peers *=.*/persistent_peers = \"$PEERS\"/}" "$HOME/.fiamma/config/config.toml"
+else
+    echo "config.toml 文件未找到，跳过配置。"
+fi
 
     # 下载 genesis.json 和 addrbook.json
     wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
