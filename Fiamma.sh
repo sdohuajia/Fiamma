@@ -123,6 +123,15 @@ function install_and_configure_fiamma() {
     sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" $HOME/.fiamma/config/client.toml
     sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" $HOME/.fiamma/config/client.toml
 
+    # Genesis / AddrBook
+    wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
+    wget -O $HOME/.fiamma/config/addrbook.json  https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/addrbook.json
+
+    # Peers / Seeds
+    sed -i -e "s/^pruning *=.*/pruning = \"custom\"/" $HOME/.fiamma/config/app.toml
+    sed -i -e "s/^pruning-keep-recent *=.*/pruning-keep-recent = \"100\"/" $HOME/.fiamma/config/app.toml
+    sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"50\"/" $HOME/.fiamma/config/app.toml
+    sed -i 's|minimum-gas-prices =.*|minimum-gas-prices = "0.0001ufia"|g' $HOME/.fiamma/config/app.toml
 
     # 配置 peers 和 seeds
     SEEDS=""
