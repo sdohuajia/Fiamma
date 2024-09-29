@@ -18,9 +18,10 @@ function main_menu() {
         echo "2) 创建验证器"
         echo "3) 委托"
         echo "4) 查看日志"
-        echo "5) 退出"
+        echo "5) 删除节点"
+        echo "6) 退出"
         echo "================================================================"
-        read -p "请输入选项 (1, 2, 3, 4, 5): " choice
+        read -p "请输入选项 (1, 2, 3, 4, 5, 6): " choice
 
         case $choice in
             1)
@@ -36,6 +37,9 @@ function main_menu() {
                 journalctl -u fiammad -f -o cat
                 ;;
             5)
+                delete_node
+                ;;
+            6)
                 echo "退出脚本。"
                 exit 0
                 ;;
@@ -54,8 +58,6 @@ function install_and_configure_fiamma() {
 
     # 安装必要的软件包
     sudo apt install -y curl git wget htop tmux build-essential jq make lz4 gcc unzip
-
-    # 安装 libssl-dev 库
     sudo apt-get install -y libssl-dev
 
     # 设置 Go 语言版本
@@ -113,25 +115,25 @@ function install_and_configure_fiamma() {
     echo "Fiamma 已成功安装并切换到 v0.2.0 版本。"
 
     # 提示用户输入验证人名称
-echo "请输入验证人名称："
-read -r validname
+    echo "请输入验证人名称："
+    read -r validname
 
-# 创建必要的目录
-mkdir -p "$HOME/.fiamma/config"
+    # 创建必要的目录
+    mkdir -p "$HOME/.fiamma/config"
 
-# 初始化 Fiamma
-fiamma init "$validname" --chain-id fiamma-testnet-1
+    # 初始化 Fiamma
+    fiamma init "$validname" --chain-id fiamma-testnet-1
 
-# 检查是否成功创建了配置文件
-if [ -f "$HOME/.fiamma/config/client.toml" ]; then
-    # 配置 client.toml
-    CONFIG_FILE="$HOME/.fiamma/config/client.toml"
-    sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
-    sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
-    sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
-else
-    echo "初始化失败，未找到配置文件。"
-fi
+    # 检查是否成功创建了配置文件
+    if [ -f "$HOME/.fiamma/config/client.toml" ]; then
+        # 配置 client.toml
+        CONFIG_FILE="$HOME/.fiamma/config/client.toml"
+        sed -i -e "s|^node *=.*|node = \"tcp://localhost:26657\"|" "$CONFIG_FILE"
+        sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" "$CONFIG_FILE"
+        sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" "$CONFIG_FILE"
+    else
+        echo "初始化失败，未找到配置文件。"
+    fi
 
     # 下载 genesis.json 和 addrbook.json
     wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
@@ -209,32 +211,6 @@ function create_and_update_validator() {
             exit 1
         fi
 
-        # 获取用户输入的信息
-        echo "请输入公钥："
-        read -r pubkey
-        echo "请输入验证人名称（Moniker）："
-        read -r moniker
-        echo "请输入网站（可选）："
-        read -r website
-
-        # 更新验证器信息
-        echo "正在更新验证器信息..."
-        cat << EOF > ~/.fiamma/config/validator.json
-{
-    "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"$pubkey"},
-    "amount": "20000ufia",
-    "moniker": "$moniker",
-    "identity": "",
-    "website": "$website",
-    "security": "",
-    "details": "RPCdot.com 🐦",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1"
-}
-EOF
-
         # 重启服务以应用更改
         sudo systemctl restart fiammad
         echo "验证器信息已更新，Fiamma 服务已重启。"
@@ -242,6 +218,9 @@ EOF
         echo "节点未同步或出现错误。请先同步节点。"
         exit 1
     fi
+    
+    # 等待用户按任意键以返回主菜单
+    read -p "按任意键返回主菜单..."
 }
 
 # 委托函数
@@ -265,6 +244,28 @@ function delegate() {
     --node=http://localhost:657
 
     echo "委托请求已提交。"
+    
+    # 等待用户按任意键以返回主菜单
+    read -p "按任意键返回主菜单..."
+}
+
+# 删除节点函数
+function delete_node() {
+    echo "正在删除 Fiamma 节点..."
+
+    sudo systemctl stop fiammad
+    sudo systemctl disable fiammad
+    sudo rm -rf /etc/systemd/system/fiammad.service
+    sudo systemctl daemon-reload
+    sudo rm -f /usr/local/bin/fiammad
+    sudo rm -f $(which fiamma)
+    sudo rm -rf $HOME/.fiamma $HOME/fiamma
+    sed -i "/FIAMMA_/d" $HOME/.bash_profile
+
+    echo "Fiamma 节点已成功删除。"
+    
+    # 等待用户按任意键以返回主菜单
+    read -p "按任意键返回主菜单..."
 }
 
 # 执行主菜单
