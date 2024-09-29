@@ -118,6 +118,22 @@ function install_and_configure_fiamma() {
     sed -i -e "s|^keyring-backend *=.*|keyring-backend = \"os\"|" $HOME/.fiamma/config/client.toml
     sed -i -e "s|^chain-id *=.*|chain-id = \"fiamma-testnet-1\"|" $HOME/.fiamma/config/client.toml
 
+    # 下载 genesis.json 和 addrbook.json
+    wget -O $HOME/.fiamma/config/genesis.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/genesis.json
+    wget -O $HOME/.fiamma/config/addrbook.json https://raw.githubusercontent.com/CoinHuntersTR/props/main/fiamma/addrbook.json
+
+    # 配置 app.toml
+    sed -i -e "s/^pruning *=.*/pruning = \"custom\"/" $HOME/.fiamma/config/app.toml
+    sed -i -e "s/^pruning-keep-recent *=.*/pruning-keep-recent = \"100\"/" $HOME/.fiamma/config/app.toml
+    sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"50\"/" $HOME/.fiamma/config/app.toml
+    sed -i 's|minimum-gas-prices =.*|minimum-gas-prices = "0.0001ufia"|g' $HOME/.fiamma/config/app.toml
+
+    # 配置 peers 和 seeds
+    SEEDS=""
+    PEERS="16b7389e724cc440b2f8a2a0f6b4c495851934ff@fiamma-testnet-peer.itrocket.net:49656,74ec322e114b6757ac066a7b6b55cd224cdb8885@65.21.167.216:37656,37e2b149db5558436bd507ecca2f62fe605f92fe@88.198.27.51:60556,e30701492127fdd86ccf243a55b9dc4146772235@213.199.42.85:37656,e2b57b310a6f3c4c0f85fc3dc3447d7e9696cd65@95.165.89.222:26706,421beadda6355465be81703fd8d25c30b2233df0@5.78.71.69:26656,21a5cae23e835f99735798024eef39fa0875bc62@65.109.30.110:17456,dd09c5a54d233d7b1b238eecedf7d855b4cb549c@65.108.81.145:26656,043da1f559e0f83eff52ff65f76b012f0f0ee9b3@198.7.119.198:37656,5a6bdb09c087012e9aa9bbdaa95694a82d489a94@144.76.155.11:26856,a03a1a53fafb669bfcce53b8b2a1362aa153cf99@77.90.13.137:37656"
+    sed -i -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*seeds *=.*/seeds = \"$SEEDS\"/}" \
+       -e "/^\[p2p\]/,/^\[/{s/^[[:space:]]*persistent_peers *=.*/persistent_peers = \"$PEERS\"/}" $HOME/.fiamma/config/config.toml
+
     # 创建 systemd 服务文件
     sudo tee /etc/systemd/system/fiammad.service > /dev/null <<EOF
 [Unit]
@@ -139,9 +155,7 @@ EOF
     sudo systemctl enable fiammad
     sudo systemctl restart fiammad
 
-    # 显示服务日志
-    echo "Fiamma 服务已成功创建、启用并启动。服务日志如下："
-    sudo journalctl -u fiammad -f
+    echo "Fiamma 服务已成功创建、启用并启动。运行命令4可查看服务日志："
 }
 
 # 创建和更新验证器函数
@@ -214,8 +228,13 @@ EOF
 
 # 委托函数
 function delegate() {
-    echo "请输入您的钱包名称："
+    echo "请输入您的钱包名称（按回车使用默认）："
     read -r wallet_name
+
+    # 设置默认值
+    if [ -z "$wallet_name" ]; then
+        wallet_name="默认钱包"  # 替换为您希望的默认钱包名称
+    fi
 
     echo "请输入验证器地址 (valoper-address)："
     read -r valoper_address
